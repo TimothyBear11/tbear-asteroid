@@ -1,9 +1,11 @@
 import pygame
-from constants import * # Using * to get all constants easily
-from logger import log_state
+import sys
+from constants import * 
+from logger import log_state, log_event
 from player import Player
-from asteroid import Asteroid         # New import
-from asteroidfield import AsteroidField # New import
+from asteroid import Asteroid       
+from asteroidfield import AsteroidField
+from shot import Shot
 
 def main():
     pygame.init()
@@ -11,19 +13,19 @@ def main():
     clock = pygame.time.Clock()
     dt = 0
 
-    # 1. Create the groups
+    
     updatable = pygame.sprite.Group()
     drawable = pygame.sprite.Group()
-    asteroids = pygame.sprite.Group() # New group for asteroids
-
-    # 2. Set containers for the classes
+    asteroids = pygame.sprite.Group() 
+    shots = pygame.sprite.Group()
+    
     Player.containers = (updatable, drawable)
     Asteroid.containers = (asteroids, updatable, drawable)
     AsteroidField.containers = (updatable)
-
-    # 3. Create objects
+    Shot.containers = (shots, drawable, updatable)
+    
     player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-    asteroid_field = AsteroidField() # This handles spawning automatically
+    asteroid_field = AsteroidField() 
 
     while True:
         log_state()
@@ -31,12 +33,26 @@ def main():
             if event.type == pygame.QUIT:
                 return
 
-        # Updates all objects (Player and Asteroids and the Field)
+        
         updatable.update(dt)
+
+
+        for asteroid in asteroids:
+            if asteroid.collides_with(player):
+                log_event("player_hit")
+                print("Game over!")
+                sys.exit()
+
+        for asteroid in asteroids:
+            for shot in shots:
+                if asteroid.collides_with(shot):
+                    log_event("asteroid_shot")
+                    shot.kill()
+                    asteroid.split()        
 
         screen.fill("black")
 
-        # Draws all objects (Player and Asteroids)
+        
         for obj in drawable:
             obj.draw(screen)
 
